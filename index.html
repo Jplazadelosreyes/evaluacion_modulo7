@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Interactivo: Estrategia DevOps para PortTrack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Cool Blues and Warm Grays -->
+    <!-- Application Structure Plan: A single-page dashboard application with a fixed top navigation bar for easy access to the four main report sections (Deployment, Security, Monitoring, ChatOps). This non-linear, task-oriented structure allows users to explore topics based on interest rather than following the report's linear order. Key concepts are presented in interactive cards and diagrams; clicking an element reveals detailed information in a dedicated panel, enhancing usability by reducing initial clutter and enabling progressive disclosure of information. This design prioritizes user exploration and quick synthesis of complex technical concepts. -->
+    <!-- Visualization & Content Choices: 
+        - Deployment Strategy: Goal: Compare. Method: Interactive cards for deployment types and tools, plus an HTML/CSS process flow diagram. Interaction: Clicking a card shows its justification. Why: Visually separates concepts for clarity and allows focused learning.
+        - Environments & Security: Goal: Organize. Method: An interactive HTML/CSS timeline for environments and a grid of cards for security topics. Interaction: Clicking a stage or card reveals details. Why: The timeline visualizes progression, while cards neatly categorize distinct security measures.
+        - Monitoring: Goal: Inform/Compare. Method: Cards for the tech stacks (Prometheus, ELK) and a Chart.js Donut chart to conceptually categorize alert types. Interaction: Clicking cards shows details; chart tooltips provide info. Why: Simplifies the complex stack into two main components and provides a high-level visual summary of alerting strategy.
+        - ChatOps: Goal: Inform/Demonstrate. Method: A mock chat interface built with styled HTML. Interaction: Buttons simulate running commands, updating the chat view. Why: More engaging and clearer than a static list of commands, showing practical application.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .active-nav {
+            color: #0369a1; /* sky-700 */
+            border-bottom-color: #0369a1; /* sky-700 */
+            font-weight: 600;
+        }
+        .inactive-nav {
+            color: #475569; /* slate-600 */
+            border-bottom-color: transparent;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 350px;
+        }
+        .content-panel {
+            min-height: 300px;
+        }
+        .flow-step {
+            transition: all 0.3s ease;
+            border-width: 2px;
+            border-style: dashed;
+        }
+        .flow-step.active {
+            border-style: solid;
+            transform: scale(1.05);
+        }
+        .chat-bubble {
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            max-width: 80%;
+            margin-bottom: 0.5rem;
+        }
+        .chat-user {
+            background-color: #0284c7; /* sky-600 */
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .chat-bot {
+            background-color: #e2e8f0; /* slate-200 */
+            color: #1e293b; /* slate-800 */
+            align-self: flex-start;
+            border-bottom-left-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-sky-700">🚢 PortTrack DevOps</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#deployment" class="nav-link px-3 py-2 text-sm font-medium border-b-2 inactive-nav">Despliegue</a>
+                        <a href="#security" class="nav-link px-3 py-2 text-sm font-medium border-b-2 inactive-nav">Seguridad</a>
+                        <a href="#monitoring" class="nav-link px-3 py-2 text-sm font-medium border-b-2 inactive-nav">Monitoreo</a>
+                        <a href="#chatops" class="nav-link px-3 py-2 text-sm font-medium border-b-2 inactive-nav">ChatOps</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="deployment" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-sky-800 mb-2">1. Estrategia de Despliegue Continuo</h2>
+            <p class="text-lg text-slate-600 mb-8 max-w-3xl">La elección de la estrategia de despliegue y las herramientas de CI/CD son fundamentales para garantizar la estabilidad y la eficiencia de las actualizaciones de PortTrack. Esta sección detalla el enfoque seleccionado para minimizar el riesgo y maximizar la agilidad.</p>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                <div>
+                    <h3 class="text-xl font-semibold text-slate-700 mb-4">Componentes Clave</h3>
+                    <div class="space-y-4">
+                        <div id="card-blue-green" class="card p-4 cursor-pointer interactive-card" data-content="blue-green">
+                            <h4 class="font-bold text-sky-700">🚀 Tipo de Despliegue: Blue-Green</h4>
+                            <p class="text-sm text-slate-500">Mantiene dos entornos idénticos para transiciones seguras y sin inactividad.</p>
+                        </div>
+                        <div id="card-tools" class="card p-4 cursor-pointer interactive-card" data-content="tools">
+                            <h4 class="font-bold text-sky-700">🛠️ Herramientas CI/CD: Jenkins & GitHub Actions</h4>
+                            <p class="text-sm text-slate-500">Una combinación poderosa para la automatización de la integración y el despliegue continuo.</p>
+                        </div>
+                         <div id="card-rollback" class="card p-4 cursor-pointer interactive-card" data-content="rollback">
+                            <h4 class="font-bold text-sky-700">🔄 Rollback y Recuperación</h4>
+                            <p class="text-sm text-slate-500">Estrategias definidas para revertir cambios y recuperar el sistema ante fallos.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card p-6 content-panel">
+                    <div id="deployment-content">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-2">Seleccione un componente</h3>
+                        <p class="text-slate-500">Haga clic en uno de los componentes de la izquierda para ver su justificación y detalles de implementación. Este panel mostrará la información relevante para cada selección.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="security" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-sky-800 mb-2">2. Configuración de Entornos y Seguridad</h2>
+            <p class="text-lg text-slate-600 mb-8 max-w-3xl">Una configuración de entornos bien definida y una gestión de seguridad robusta son cruciales para proteger la información sensible de PortTrack. Aquí se detalla el flujo de entornos y las capas de seguridad integradas en el pipeline.</p>
+            
+            <h3 class="text-xl font-semibold text-slate-700 mb-6 text-center">Flujo de Promoción entre Entornos</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center mb-12">
+                <div id="flow-dev" class="flow-step border-sky-300 p-4 rounded-lg cursor-pointer" data-content="dev">
+                    <div class="text-3xl mb-2">💻</div>
+                    <h4 class="font-bold">DEV</h4>
+                    <p class="text-xs text-slate-500">Desarrollo</p>
+                </div>
+                <div id="flow-test" class="flow-step border-teal-300 p-4 rounded-lg cursor-pointer" data-content="test">
+                    <div class="text-3xl mb-2">🧪</div>
+                    <h4 class="font-bold">TEST</h4>
+                    <p class="text-xs text-slate-500">Pruebas Automatizadas</p>
+                </div>
+                <div id="flow-staging" class="flow-step border-amber-300 p-4 rounded-lg cursor-pointer" data-content="staging">
+                    <div class="text-3xl mb-2">📋</div>
+                    <h4 class="font-bold">STAGING</h4>
+                    <p class="text-xs text-slate-500">Validación Final</p>
+                </div>
+                <div id="flow-prd" class="flow-step border-rose-300 p-4 rounded-lg cursor-pointer" data-content="prd">
+                    <div class="text-3xl mb-2">🌍</div>
+                    <h4 class="font-bold">PRD</h4>
+                    <p class="text-xs text-slate-500">Producción</p>
+                </div>
+            </div>
+            <div class="card p-6 content-panel bg-sky-50/50">
+                <div id="environment-content">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-2">Flujo de Entornos</h3>
+                    <p class="text-slate-500">Haga clic en una etapa del flujo para conocer su propósito y método de despliegue. Cada entorno tiene un rol específico para asegurar la calidad y estabilidad del software antes de llegar a los usuarios finales.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="monitoring" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-sky-800 mb-2">3. Implementación de Monitoreo Continuo</h2>
+            <p class="text-lg text-slate-600 mb-8 max-w-3xl">Un monitoreo proactivo y una observabilidad completa son esenciales para la detección temprana de incidentes y la mejora continua. La estrategia se basa en dos pilares: métricas para el rendimiento y logs para el comportamiento.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2">
+                    <h3 class="text-xl font-semibold text-slate-700 mb-4">Stack de Observabilidad</h3>
+                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <div class="card p-6">
+                            <h4 class="font-bold text-lg text-sky-700 mb-2">📊 Métricas: Prometheus + Grafana</h4>
+                            <p class="text-slate-600">Recolección de métricas de series de tiempo para monitorear el rendimiento y la salud del sistema. Grafana proporciona dashboards visuales para interpretar estos datos en tiempo real.</p>
+                        </div>
+                        <div class="card p-6">
+                            <h4 class="font-bold text-lg text-sky-700 mb-2">📜 Logs: ELK Stack</h4>
+                            <p class="text-slate-600">Centralización y análisis de logs de todos los componentes. Permite la búsqueda, visualización y detección de anomalías en el comportamiento de la aplicación y la infraestructura.</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                     <h3 class="text-xl font-semibold text-slate-700 mb-4">Tipos de Alertas</h3>
+                     <div class="card p-4">
+                        <div class="chart-container">
+                            <canvas id="alertsChart"></canvas>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="chatops" class="scroll-mt-24">
+            <h2 class="text-3xl font-bold text-sky-800 mb-2">4. Automatización y ChatOps</h2>
+            <p class="text-lg text-slate-600 mb-8 max-w-3xl">La integración de ChatOps agiliza la comunicación y la gestión de incidentes, permitiendo a los equipos interactuar con los sistemas de CI/CD y monitoreo directamente desde su plataforma de chat.</p>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="card p-6">
+                    <h3 class="text-xl font-semibold text-slate-700 mb-4">Simulador de ChatOps</h3>
+                    <div id="chat-window" class="h-80 bg-slate-100 rounded-lg p-4 flex flex-col space-y-2 overflow-y-auto mb-4">
+                        <div class="chat-bubble chat-bot">¡Hola! Soy PortBot. ¿En qué puedo ayudarte?</div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="chat-command-btn bg-sky-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-sky-700" data-command="status">/porttrack status barcos-api</button>
+                        <button class="chat-command-btn bg-sky-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-sky-700" data-command="rollback">/porttrack rollback cargas-v2</button>
+                        <button class="chat-command-btn bg-sky-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-sky-700" data-command="logs">/porttrack logs auth-service</button>
+                    </div>
+                </div>
+                <div class="bg-sky-50/50 rounded-lg p-6">
+                     <h3 class="text-xl font-semibold text-slate-700 mb-4">Flujos de Trabajo Implementados</h3>
+                     <ul class="space-y-3 text-slate-600">
+                        <li class="flex items-start">
+                            <span class="text-sky-600 mr-3 mt-1">✓</span>
+                            <span><strong class="font-semibold text-slate-800">Notificaciones de Despliegue:</strong> Alertas en tiempo real sobre el inicio, éxito o fallo de los despliegues.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-sky-600 mr-3 mt-1">✓</span>
+                            <span><strong class="font-semibold text-slate-800">Comandos de Estado:</strong> Consultas rápidas sobre la salud y métricas de cualquier microservicio.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-sky-600 mr-3 mt-1">✓</span>
+                            <span><strong class="font-semibold text-slate-800">Activación de Acciones:</strong> Capacidad de iniciar despliegues o rollbacks de forma segura desde el chat.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-sky-600 mr-3 mt-1">✓</span>
+                            <span><strong class="font-semibold text-slate-800">Diagnóstico Rápido:</strong> Acceso inmediato a logs recientes para acelerar la resolución de incidentes.</span>
+                        </li>
+                     </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const contentData = {
+                'blue-green': {
+                    title: '🚀 Despliegue Blue-Green',
+                    content: `
+                        <p class="mb-4 text-slate-600">Esta estrategia implica mantener dos entornos de producción idénticos para minimizar el riesgo y eliminar el tiempo de inactividad durante las actualizaciones.</p>
+                        <ul class="space-y-2">
+                            <li class="flex items-start"><strong class="text-sky-600 w-28 shrink-0">✅ Cero Inactividad:</strong><span>Permite una transición casi instantánea, crucial para operaciones portuarias 24/7.</span></li>
+                            <li class="flex items-start"><strong class="text-sky-600 w-28 shrink-0">✅ Rollback Fácil:</strong><span>En caso de fallo, el tráfico se redirige inmediatamente al entorno "Blue" estable.</span></li>
+                            <li class="flex items-start"><strong class="text-sky-600 w-28 shrink-0">✅ Pruebas Reales:</strong><span>La nueva versión se valida en un entorno de producción real antes de recibir tráfico de usuarios.</span></li>
+                        </ul>
+                    `
+                },
+                'tools': {
+                    title: '🛠️ Herramientas CI/CD',
+                    content: `
+                        <p class="mb-4 text-slate-600">Se utiliza una combinación de Jenkins y GitHub Actions para una automatización robusta y flexible.</p>
+                        <ul class="space-y-3">
+                            <li><strong class="font-semibold text-slate-800">GitHub Actions:</strong> Se encarga de la Integración Continua (CI). Automatiza pruebas y la construcción de imágenes Docker en cada push al repositorio.</li>
+                            <li><strong class="font-semibold text-slate-800">Jenkins:</strong> Orquesta el Despliegue Continuo (CD). Gestiona los pipelines complejos de despliegue Blue-Green en Kubernetes, controlando la transición de tráfico y los rollbacks.</li>
+                        </ul>
+                    `
+                },
+                'rollback': {
+                    title: '🔄 Rollback y Recuperación',
+                    content: `
+                        <p class="mb-4 text-slate-600">Un plan de recuperación sólido es esencial. Se implementan múltiples capas de seguridad para revertir cambios de forma segura.</p>
+                        <ul class="space-y-2">
+                           <li><strong class="font-semibold text-slate-800">Redirección de Tráfico:</strong> El método principal, inherente a Blue-Green.</li>
+                           <li><strong class="font-semibold text-slate-800">Versionado de Imágenes:</strong> Permite desplegar una versión anterior específica desde el registro de contenedores.</li>
+                           <li><strong class="font-semibold text-slate-800">Backups de Base de Datos:</strong> Copias de seguridad periódicas para restaurar el estado de los datos si es necesario.</li>
+                        </ul>
+                    `
+                },
+                'dev': {
+                    title: '💻 Entorno de Desarrollo (DEV)',
+                    content: '<p class="text-slate-600">Entornos de trabajo individuales para desarrolladores. Los despliegues son continuos y automáticos en cada commit para facilitar la iteración rápida y la detección temprana de errores.</p>'
+                },
+                'test': {
+                    title: '🧪 Entorno de Pruebas (TEST)',
+                    content: '<p class="text-slate-600">Aquí se ejecutan todas las pruebas automatizadas (unitarias, de integración, funcionales). Un despliegue se promueve a este entorno solo si todas las pruebas de DEV son exitosas.</p>'
+                },
+                'staging': {
+                    title: '📋 Entorno de Staging',
+                    content: '<p class="text-slate-600">Réplica del entorno de producción. Se usa para pruebas de rendimiento, seguridad y validación final por parte de los stakeholders (UAT). Los despliegues son programados o bajo demanda.</p>'
+                },
+                'prd': {
+                    title: '🌍 Entorno de Producción (PRD)',
+                    content: '<p class="text-slate-600">El entorno en vivo accesible a los usuarios finales. Los despliegues son altamente controlados, utilizando la estrategia Blue-Green, y solo se realizan tras la aprobación completa en Staging.</p>'
+                }
+            };
+            
+            const deploymentContentPanel = document.getElementById('deployment-content');
+            const interactiveCards = document.querySelectorAll('.interactive-card');
+            interactiveCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    interactiveCards.forEach(c => c.classList.remove('ring-2', 'ring-sky-500'));
+                    card.classList.add('ring-2', 'ring-sky-500');
+                    const contentKey = card.dataset.content;
+                    const data = contentData[contentKey];
+                    deploymentContentPanel.innerHTML = `<h3 class="text-lg font-semibold text-slate-800 mb-2">${data.title}</h3>${data.content}`;
+                });
+            });
+
+            const environmentContentPanel = document.getElementById('environment-content');
+            const flowSteps = document.querySelectorAll('.flow-step');
+            flowSteps.forEach(step => {
+                step.addEventListener('click', () => {
+                    flowSteps.forEach(s => s.classList.remove('active', 'bg-sky-100', 'border-sky-500'));
+                    step.classList.add('active', 'bg-sky-100', 'border-sky-500');
+                    const contentKey = step.dataset.content;
+                    const data = contentData[contentKey];
+                    environmentContentPanel.innerHTML = `<h3 class="text-lg font-semibold text-slate-800 mb-2">${data.title}</h3>${data.content}`;
+                });
+            });
+
+            const alertsCtx = document.getElementById('alertsChart').getContext('2d');
+            new Chart(alertsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Basadas en Métricas', 'Basadas en Logs', 'Eventos de Seguridad'],
+                    datasets: [{
+                        label: 'Tipos de Alertas',
+                        data: [55, 30, 15],
+                        backgroundColor: [
+                            'rgb(56, 189, 248)', // sky-400
+                            'rgb(34, 211, 238)', // cyan-400
+                            'rgb(251, 113, 133)'  // rose-400
+                        ],
+                        borderColor: '#f8fafc',
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                color: '#475569' // slate-600
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '% del total';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            const chatWindow = document.getElementById('chat-window');
+            const commandButtons = document.querySelectorAll('.chat-command-btn');
+            const chatResponses = {
+                status: [
+                    { from: 'user', text: '/porttrack status barcos-api' },
+                    { from: 'bot', text: 'Consultando estado de `barcos-api`...' },
+                    { from: 'bot', text: '✅ **Servicio:** barcos-api\n**Estado:** ONLINE\n**Versión:** 1.4.2\n**Latencia p95:** 120ms' }
+                ],
+                rollback: [
+                    { from: 'user', text: '/porttrack rollback cargas-v2' },
+                    { from: 'bot', text: '⚠️ Solicitud de rollback para `cargas-v2` recibida. Iniciando procedimiento...' },
+                    { from: 'bot', text: 'Rollback completado. Versión activa ahora es `cargas-v1.9.8`.' }
+                ],
+                logs: [
+                    { from: 'user', text: '/porttrack logs auth-service' },
+                    { from: 'bot', text: 'Obteniendo últimos logs de `auth-service`...' },
+                    { from: 'bot', text: '`[ERROR] Failed login attempt for user: admin_test`\n`[INFO] Token validation successful for user: op_port_01`' }
+                ]
+            };
+
+            commandButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const command = button.dataset.command;
+                    const messages = chatResponses[command];
+                    
+                    chatWindow.innerHTML = '';
+                    let delay = 0;
+                    messages.forEach(msg => {
+                        setTimeout(() => {
+                            const bubble = document.createElement('div');
+                            bubble.classList.add('chat-bubble');
+                            bubble.classList.add(msg.from === 'user' ? 'chat-user' : 'chat-bot');
+                            bubble.innerHTML = msg.text;
+                            chatWindow.appendChild(bubble);
+                            chatWindow.scrollTop = chatWindow.scrollHeight;
+                        }, delay);
+                        delay += msg.from === 'bot' ? 600 : 100;
+                    });
+                });
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active-nav');
+                    link.classList.add('inactive-nav');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active-nav');
+                        link.classList.remove('inactive-nav');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
